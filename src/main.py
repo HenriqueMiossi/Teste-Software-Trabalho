@@ -1,7 +1,8 @@
+from compoundinterest import CompoundInterest
+import re
 from selenium import webdriver
 # from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
-from compoundinterest import CompoundInterest
 # from selenium.webdriver.support.ui import Select
 # from enum import Enum
 
@@ -16,6 +17,14 @@ url = "https://investidorsardinha.r7.com/calculadoras/calculadora-de-juros-compo
 result = {"final_value": -1, "initial_value": -1, "interest_rate": -1}
 compound_interest = CompoundInterest(1000, 6, 4)
 
+# Is there a better way to do this?
+# How does | works?
+def sanitize_result(res):
+    #re.search()
+    res = re.sub("R\$ |\.", "", res)
+    res = re.sub(",", ".", res)
+    return float(res)
+
 # driver.implicity_wait(0.5)
 def get_result():
     driver.implicitly_wait(1.5)
@@ -26,11 +35,11 @@ def get_result():
         label = res.find_element(By.TAG_NAME, "p")
         content = res.find_element(By.TAG_NAME, "div")
         if label.text == "Valor total final":
-            result["final_value"] = content.text
+            result["final_value"] = sanitize_result(content.text)
         elif label.text == "Valor total investido":
-            result["initial_value"] = content.text
+            result["initial_value"] = sanitize_result(content.text)
         elif label.text == "Total em juros":
-            result["interest_rate"] = content.text
+            result["interest_rate"] = sanitize_result(content.text)
         else:
             print("Fail.")
 
