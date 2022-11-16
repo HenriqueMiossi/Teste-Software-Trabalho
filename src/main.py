@@ -1,55 +1,79 @@
 from selenium import webdriver
-from selenium.webdriver.firefox.options import Options
+# from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import Select
-from enum import Enum
+from compoundinterest import CompoundInterest
+# from selenium.webdriver.support.ui import Select
+# from enum import Enum
 
-firefox_path = r'C:\Program Files\Mozilla Firefox\firefox.exe'
-geckodriver_path = r'C:\Windows\geckodriver.exe'
+# firefox_path = r'C:\Program Files\Mozilla Firefox\firefox.exe'
+# geckodriver_path = r'C:\Windows\geckodriver.exe'
 
-options = Options()
-options.binary_location = firefox_path
-driver = webdriver.Firefox(executable_path=geckodriver_path, options=options)
+# options = Options()
+# options.binary_location = firefox_path
+# driver = webdriver.Firefox(executable_path=geckodriver_path, options=options)
+driver = webdriver.Chrome()
+url = "https://investidorsardinha.r7.com/calculadoras/calculadora-de-juros-compostos/"
+result = {"final_value": -1, "initial_value": -1, "interest_rate": -1}
+compound_interest = CompoundInterest(1000, 6, 4)
 
-driver.get('https://investidorsardinha.r7.com/calculadoras/calculadora-de-juros-compostos/')
+# driver.implicity_wait(0.5)
+def get_result():
+    driver.implicitly_wait(1.5)
 
-start_value = driver.find_element(By.ID, 'input-jc-valor-inicial')
-start_value.send_keys('100000') # R$1000,00
+    results = driver.find_elements(By.CSS_SELECTOR, "#calculation-result .p-3")
 
-monthly_value = driver.find_element(By.ID, 'input-jc-valor-mensal')
-monthly_value.send_keys('0') # R$0,00
+    for res in results:
+        label = res.find_element(By.TAG_NAME, "p")
+        content = res.find_element(By.TAG_NAME, "div")
+        if label.text == "Valor total final":
+            result["final_value"] = content.text
+        elif label.text == "Valor total investido":
+            result["initial_value"] = content.text
+        elif label.text == "Total em juros":
+            result["interest_rate"] = content.text
+        else:
+            print("Fail.")
 
-interest_rate = driver.find_element(By.ID, 'input-jc-taxa-juros')
-interest_rate.clear()
-interest_rate.send_keys('6')
+def run_test(compound_interest):
+    driver.get(url)
 
-period = driver.find_element(By.ID, 'input-jc-periodo')
-period.clear()
-period.send_keys('4')
+    initial_value = driver.find_element(By.ID, 'input-jc-valor-inicial')
+    monthly_contribution = driver.find_element(By.ID, 'input-jc-valor-mensal')
+    interest_rate = driver.find_element(By.ID, 'input-jc-taxa-juros')
+    period = driver.find_element(By.ID, 'input-jc-periodo')
+    buttons = driver.find_elements(By.CLASS_NAME, 'btn')
+    calc = [btn for btn in buttons if btn.get_attribute('value') == 'Calcular'][0]
 
-buttons = driver.find_elements(By.CLASS_NAME, 'btn-primary')
-calculate_button = [x for x in buttons if x.get_attribute('value') == 'Calcular'][0]
-calculate_button.click()
+    initial_value.clear()
+    monthly_contribution.clear()
+    interest_rate.clear()
+    period.clear()
+    initial_value.send_keys(compound_interest.p * 100)
+    interest_rate.send_keys(compound_interest.r)
+    period.send_keys(compound_interest.t)
+    calc.click()
+    get_result()
+    driver.close()
 
-class Period(Enum):
-    MONTH = 1
-    YEAR = 2
+# class Period(Enum):
+#     MONTH = 1
+#     YEAR = 2
 
-def change_selection_values(interest: Period, period: Period):
-    interest_rate_selection = Select(driver.find_element(By.ID, 'input-jc-taxa-juros-frequencia'))
-    if (interest == Period.YEAR):
-        interest_rate_selection.select_by_value('anual')
-    elif (interest == Period.MONTH):
-        interest_rate_selection.select_by_value('mensal')
-    else:
-        raise TypeError('interest must be an instance of Period Enum')
+# def change_selection_values(interest: Period, period: Period):
+#     interest_rate_selection = Select(driver.find_element(By.ID, 'input-jc-taxa-juros-frequencia'))
+#     if (interest == Period.YEAR):
+#         interest_rate_selection.select_by_value('anual')
+#     elif (interest == Period.MONTH):
+#         interest_rate_selection.select_by_value('mensal')
+#     else:
+#         raise TypeError('interest must be an instance of Period Enum')
 
-    period_selection = Select(driver.find_element(By.ID, 'input-jc-periodo-unidade'))
-    if (period == Period.YEAR):
-        period_selection.select_by_value('ano(s)')
-    elif (period == Period.MONTH):
-        period_selection.select_by_value('mes(es)')
-    else:
-        raise TypeError('period must be an instance of Period Enum')
+#     period_selection = Select(driver.find_element(By.ID, 'input-jc-periodo-unidade'))
+#     if (period == Period.YEAR):
+#         period_selection.select_by_value('ano(s)')
+#     elif (period == Period.MONTH):
+#         period_selection.select_by_value('mes(es)')
+#     else:
+#         raise TypeError('period must be an instance of Period Enum')
 
-change_selection_values(Period.MONTH, Period.MONTH)
+# change_selection_values(Period.MONTH, Period.MONTH)
