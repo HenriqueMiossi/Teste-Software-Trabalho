@@ -70,9 +70,22 @@ def run_test(driver, start_value: float, monthly_value: float, interest_rate_val
     click_calculate(driver)
 
     driver.implicitly_wait(1.5)
-    result = get_result(driver)
-    
-    print(result)
+    return get_result(driver)
+
+def check_test(result, expected_fv, expected_iv, expected_ir):
+    expected_result = {
+        'final_value': expected_fv,
+        'initial_value': expected_iv,
+        'interest_rate': expected_ir
+    }
+    if (result == expected_result):
+        print('Pass')
+        return True
+    else: 
+        print('Fail')
+        print('Expected this results: ', expected_result)
+        print('Got: ', result)
+        return False
 
 def main():
     options = Options()
@@ -80,14 +93,40 @@ def main():
     driver = webdriver.Firefox(executable_path=geckodriver_path, options=options)
     driver.get('https://investidorsardinha.r7.com/calculadoras/calculadora-de-juros-compostos/')
 
-    run_test(driver, 100, 500, 6, Period.YEAR, 5, Period.YEAR)
-    driver.refresh()
-    run_test(driver, 100, 500, 6, Period.YEAR, 5, Period.MONTH)
-    driver.refresh()
-    run_test(driver, 100, 500, 6, Period.MONTH, 5, Period.YEAR)
-    driver.refresh()
-    run_test(driver, 100, 500, 6, Period.MONTH, 5, Period.MONTH)
+    passes = 0
+    fails = 0
+
+    result = run_test(driver, 100, 500, 6, Period.YEAR, 5, Period.YEAR)
+    if (check_test(result, 34876.72, 30100.0, 4776.72) == True):
+        passes += 1
+    else:
+        fails += 1
     
+    driver.refresh()
+    result = run_test(driver, 100, 500, 6, Period.YEAR, 5, Period.MONTH)
+    if (check_test(result, 2626.91, 2600.0, 26.91) == True):
+        passes += 1
+    else:
+        fails += 1
+
+    driver.refresh()
+    result = run_test(driver, 100, 500, 6, Period.MONTH, 5, Period.YEAR)
+    if (check_test(result, 269862.86, 30100.0, 239762.86) == True):
+        passes += 1
+    else:
+        fails += 1
+
+    driver.refresh()
+    result = run_test(driver, 100, 500, 6, Period.MONTH, 5, Period.MONTH)
+    if (check_test(result, 2952.37, 2600.0, 352.37) == True):
+        passes += 1
+    else:
+        fails += 1
+
+    print('Summary:')
+    print(f'{passes} tests passed, {passes / 4 * 100}%')
+    print(f'{fails} tests failed, {fails / 4 * 100}%')
+
     driver.close()
 
 main()
